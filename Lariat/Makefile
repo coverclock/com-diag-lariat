@@ -18,7 +18,7 @@ HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
 ################################################################################
 
 GTEST_SRC=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
-GTEST_LIB=$(HOME)/projects/gtest-1.6.0/libgtest.a
+GTEST_LIB=$(GTEST_SRC)/libgtest.a
 GTEST_INC=$(GTEST_SRC)/include
 
 ################################################################################
@@ -29,16 +29,20 @@ CWD:=$(shell pwd)
 PROJECT_DIR=$(CWD)
 
 LARIAT_SRC=$(PROJECT_DIR)
-LARIAT_LIB=$(PROJECT_DIR)/lariat.o
+LARIAT_LIB=$(PROJECT_DIR)/lib$(PROJECT).a
 LARIAT_INC=$(PROJECT_DIR)/include
 
 CC=gcc
 CXX=g++
+AR=ar
+RANLIB=ranlib
+STRIP=strip
+
 CPPFLAGS=-I$(LARIAT_INC) -I$(GTEST_INC)
 CFLAGS=
 CXXFLAGS=
+ARFLAGS=rcv
 LDFLAGS=$(LARIAT_LIB) $(GTEST_LIB) -lpthread -lrt -lm
-STRIP=strip
 
 ################################################################################
 # LISTS
@@ -65,6 +69,20 @@ default:	all
 ################################################################################
 # RULES
 ################################################################################
+
+TARGETS+=$(PROJECT).o
+
+ARTIFACTS+=$(PROJECT).o
+
+ARCHIVABLE+=$(PROJECT).o
+
+TARGETS+=lib$(PROJECT).a
+
+ARTIFACTS+=lib$(PROJECT).a
+
+lib$(PROJECT).a:	$(ARCHIVABLE)
+	$(AR) $(ARFLAGS) lib$(PROJECT).a $(ARCHIVABLE)
+	$(RANLIB) lib$(PROJECT).a
 
 TARGETS+=unittest
 
