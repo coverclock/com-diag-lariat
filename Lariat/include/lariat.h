@@ -28,14 +28,15 @@ extern const char * number(const char * string, unsigned long * valuep);
  * processes this really implies the pre-defined maximum hard limit value, and
  * even then the limit must be forced.
  */
-extern const unsigned long UNLIMITED;
+static const unsigned long UNLIMITED = ~(unsigned long)0;
 
 /**
  * Set the limit of the specified resource to the specified value. The resource
- * limit is set to the value or to the pre-defined maximum hard limit value,
- * whichever is less.
+ * limit is set to the value. If UNLIMITED is specified, the resource limit is
+ * set to the pre-defined hard maximum, or to INFINITY is force is applied.
+ * Only privileged processes may apply force.
  * @param resource identifies the resource.
- * @param value is the new limit value or ~0 to indicate unlimited.
+ * @param value is the new limit value or UNLIMITED.
  * @param force if true overrides the pre-defined maximum hard limit value.
  * @return 0 for success, <0 otherwise.
  */

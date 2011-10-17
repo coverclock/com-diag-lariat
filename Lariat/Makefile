@@ -26,14 +26,18 @@ GTEST_INC=$(GTEST_SRC)/include
 ################################################################################
 
 CWD:=$(shell pwd)
-PROJECT_DIR=$(CWD)/artifacts
+PROJECT_DIR=$(CWD)
+
+LARIAT_SRC=$(PROJECT_DIR)
+LARIAT_LIB=$(PROJECT_DIR)/lariat.o
+LARIAT_INC=$(PROJECT_DIR)/include
 
 CC=gcc
 CXX=g++
-CPPFLAGS=-I$(GTEST_INC)
+CPPFLAGS=-I$(LARIAT_INC) -I$(GTEST_INC)
 CFLAGS=
 CXXFLAGS=
-LDFLAGS=
+LDFLAGS=$(LARIAT_LIB) $(GTEST_LIB) -lpthread -lrt -lm
 STRIP=strip
 
 ################################################################################
@@ -62,7 +66,51 @@ default:	all
 # RULES
 ################################################################################
 
-TARGETS+=lariat.o
+TARGETS+=unittest
+
+ARTIFACTS+=unittest
+
+unittest:	main.o $(LARIAT_LIB) $(GTEST_LIB)
+	$(CXX) -o unittest main.o $(LDFLAGS)
+
+################################################################################
+# UNIT TESTS
+################################################################################
+
+PHONY+=cpu
+
+cpu:	unittest
+	./unittest --gtest_filter=LariatTest.Cpu -c 1
+
+PHONY+=core
+
+core:	unittest
+	./unittest --gtest_filter=LariatTest.Core -E
+
+PHONY+=memory
+
+memory:	unittest
+	./unittest --gtest_filter=LariatTest.Memory -m 10485760
+
+PHONY+=opened
+
+opened:	unittest
+	./unittest --gtest_filter=LariatTest.Opened -o 10
+
+PHONY+=real
+
+real:	unittest
+	./unittest --gtest_filter=LariatTest.Real -r 5
+
+PHONY+=stack
+
+stack:	unittest
+	./unittest --gtest_filter=LariatTest.Stack -s 10
+
+PHONY+=thread
+
+thread:	unittest
+	./unittest --gtest_filter=LariatTest.Thread -t 10
 
 ################################################################################
 # PATTERNS
@@ -103,6 +151,7 @@ PHONY+=all clean clobber pristine
 all:	$(TARGETS)
 
 clean:
+	rm -f *.o
 	rm -f $(ARTIFACTS)
 	
 clobber:	clean
