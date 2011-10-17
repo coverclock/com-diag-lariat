@@ -11,17 +11,19 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <stdio.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <csignal>
+#include <cerrno>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <signal.h>
-#include <errno.h>
 #include "lariat.h"
 
-namespace com { namespace diag { namespace lariat {
+using namespace std;
 
-using namespace ::std;
+extern char * optarg;
+
+namespace com { namespace diag { namespace lariat {
 
 const char * number(const char * string, unsigned long * valuep)
 {
@@ -36,34 +38,52 @@ const char * number(const char * string, unsigned long * valuep)
 	return end;
 }
 
-const unsigned long UNLIMITED = ~(unsigned long)0;
+#if 0
+/**
+ * Some older C++ compilers complain if storage for a static const variable is
+ * not allocated within a translation unit. Some newer C++ compilers complain
+ * if it is.
+ */
+static const unsigned long UNLIMITED;
+#endif
 
 int limit(int resource, unsigned long value, bool force)
 {
 	int rc = -1;
 	struct rlimit limit;
+	rlim_t actual;
 
     do {
 
-    	if (getrlimit(RLIMIT_CORE, &limit) < 0) {
+    	memset(&limit, 0, sizeof(limit));
+
+    	if (getrlimit(resource, &limit) < 0) {
     		perror("getrlimit");
             break;
         }
 
-		if (force) {
-    		limit.rlim_cur = value;
-		} else if (value == UNLIMITED) {
-    		limit.rlim_cur = limit.rlim_max;
-    	} else if (value < limit.rlim_max) {
-    		limit.rlim_cur = value;
+#if defined(DEBUG)
+    	fprintf(stderr, "limit[%d]: was cur=%lu max=%lu\n", resource, limit.rlim_cur, limit.rlim_max);
+#endif
+
+    	actual = (value == UNLIMITED) ? RLIM_INFINITY : value;
+
+    	if (actual < limit.rlim_max) {
+    		limit.rlim_cur = actual;
+    	} else if (force) {
+    		limit.rlim_cur = actual;
+    		limit.rlim_max = actual;
     	} else {
     		limit.rlim_cur = limit.rlim_max;
     	}
 
-		if (setrlimit(RLIMIT_CORE, &limit) < 0) {
+		if (setrlimit(resource, &limit) < 0) {
 			perror("setrlimit");
             break;
 		}
+#if defined(DEBUG)
+    	fprintf(stderr, "limit[%d]: now cur=%lu max=%lu\n", resource, limit.rlim_cur, limit.rlim_max);
+#endif
 
         rc = 0;
 
@@ -72,11 +92,16 @@ int limit(int resource, unsigned long value, bool force)
 	return rc;
 }
 
+static pid_t pid = -1;
+
 void handler(int signum)
 {
 	if (signum == SIGALRM) {
 		errno = ETIMEDOUT;
 		perror("SIGALRM");
+		if (pid > 0) {
+			killpg(pid, SIGKILL);
+		}
 		exit(2);
 	}
 }
@@ -122,7 +147,8 @@ int timer(int which, unsigned long seconds)
  */
 static void usage(const char * program, FILE * stream)
 {
-    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -v BYTES | -V ] [ -? ]\n", program);
+    fprintf(stream, "\n");
+    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -m BYTES | -M ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -0 ] [ -! ] [ -? ]\n", program);
     fprintf(stream, "       -c SECONDS    Set the CPU time limit to SECONDS\n");
     fprintf(stream, "       -C            Set the CPU time limit to unlimited\n");
     fprintf(stream, "       -d BYTES      Set the data segment size limit to BYTES\n");
@@ -131,6 +157,8 @@ static void usage(const char * program, FILE * stream)
     fprintf(stream, "       -E            Set the core file limit to unlimited\n");
     fprintf(stream, "       -f BYTES      Set the file size limit to BYTES\n");
     fprintf(stream, "       -F            Set the file size limit to unlimited\n");
+    fprintf(stream, "       -m BYTES      Set the virtual memory limit to BYTES\n");
+    fprintf(stream, "       -M            Set the virtual memory limit to unlimited\n");
     fprintf(stream, "       -o OPENED     Set the open file descriptor limit to OPENED\n");
     fprintf(stream, "       -O            Set the open file descriptor to unlimited\n");
     fprintf(stream, "       -r SECONDS    Set the real time limit to SECONDS\n");
@@ -139,8 +167,7 @@ static void usage(const char * program, FILE * stream)
     fprintf(stream, "       -S            Set the process stack size limit to unlimited\n");
     fprintf(stream, "       -t THREADS    Set the process and thread limit to THREADS\n");
     fprintf(stream, "       -T            Set the process and thread limit to unlimited\n");
-    fprintf(stream, "       -v BYTES      Set the virtual memory limit to BYTES\n");
-    fprintf(stream, "       -V            Set the virtual memory limit to unlimited\n");
+    fprintf(stderr, "       -0            Do not actually run any tests\n");
     fprintf(stderr, "       -!            Enable debug output\n");
     fprintf(stderr, "       -?            Print menu\n");
 }
@@ -149,7 +176,6 @@ int main(int argc, char ** argv, char ** envp)
 {
 	const char * program;
     int opt;
-    extern char * optarg;
     bool debug = false;
     bool done = false;
     bool error = false;
@@ -158,26 +184,35 @@ int main(int argc, char ** argv, char ** envp)
     program = strrchr(argv[0], '/');
     program = (program == (char *)0) ? argv[0] : program + 1;
 
+    if ((pid = getpid()) < 0) {
+    	perror("getpid");
+    } else if (setpgid(0, pid) < 0) {
+    	perror("setpgid");
+    	pid = -1;
+    } else {
+    	// Do nothing.
+    }
+
     ::testing::InitGoogleTest(&argc, argv);
 
-    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fo:Os:St:Tv:V!?")) >= 0) {
+    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fm:Mo:Os:Rr:St:T0!?")) >= 0) {
 
         switch (opt) {
 
         case 'c':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_CPU, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_CPU, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'C':
-            if ((limit(RLIMIT_CPU) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_CPU) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 'd':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_DATA, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_DATA, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
@@ -189,94 +224,107 @@ int main(int argc, char ** argv, char ** envp)
             break;
 
         case 'e':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_CORE, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_CORE, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'E':
-            if ((limit(RLIMIT_CORE) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_CORE) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 'f':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_FSIZE, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_FSIZE, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'F':
-            if ((limit(RLIMIT_FSIZE) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_FSIZE) < 0))) && debug) {
+            	fprintf(stderr, "%s: -%c\n", program, opt);
+            }
+            break;
+
+        case 'm':
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_AS, value) < 0))) && debug) {
+            	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
+            }
+            break;
+
+        case 'M':
+            if ((!(error = (limit(RLIMIT_AS) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 'o':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_NOFILE, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_NOFILE, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'O':
-            if ((limit(RLIMIT_NOFILE) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_NOFILE) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 'r':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (install(SIGALRM, handler) == 0) && (timer(ITIMER_REAL, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (install(SIGALRM, handler) < 0))) && (!(error = (timer(ITIMER_REAL, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'R':
-            if ((install(SIGALRM) == 0) && (timer(ITIMER_REAL) == 0) && debug) {
+            if ((!(error = (install(SIGALRM) < 0))) && (!(error = (timer(ITIMER_REAL) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 's':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_STACK, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_STACK, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'S':
-            if ((limit(RLIMIT_STACK) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_STACK) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
         case 't':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_NPROC, value) == 0) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (limit(RLIMIT_NPROC, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'T':
-            if ((limit(RLIMIT_NPROC) == 0) && debug) {
+            if ((!(error = (limit(RLIMIT_NPROC) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
 
-        case 'v':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (limit(RLIMIT_AS, value) == 0) && debug) {
-            	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
-            }
-            break;
-
-        case 'V':
-            if ((limit(RLIMIT_AS) == 0) && debug) {
-            	fprintf(stderr, "%s: -%c\n", program, opt);
-            }
-            break;
+        case '0':
+        	done = true;
+        	if (debug) {
+        		fprintf(stderr, "%s: -%c\n", program, opt);
+        	}
+        	break;
 
         case '!':
             debug = true;
+        	if (debug) {
+        		fprintf(stderr, "%s: -%c\n", program, opt);
+        	}
             break;
 
         case '?':
+        	if (debug) {
+        		fprintf(stderr, "%s: -%c\n", program, opt);
+        	}
             usage(program, stderr);
             done = true;
             break;
@@ -302,16 +350,16 @@ int main(int argc, char ** argv, char ** envp)
     	exit(1);
     }
 
-    if (done) {
-    	exit(0);
-    }
-
     if (debug) {
     	if (envp != 0) {
 			for (; (*envp !=  0); ++envp) {
 				fprintf(stderr, "%s: %s\n", program, *envp);
 			}
     	}
+    }
+
+    if (done) {
+    	exit(0);
     }
 
     return RUN_ALL_TESTS();
