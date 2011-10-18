@@ -39,10 +39,10 @@ RANLIB=ranlib
 STRIP=strip
 
 CPPFLAGS=-I$(LARIAT_INC) -I$(GTEST_INC)
-CFLAGS=
-CXXFLAGS=
+CFLAGS=-g
+CXXFLAGS=-g
 ARFLAGS=rcv
-LDFLAGS=$(LARIAT_LIB) $(GTEST_LIB) -lpthread -lrt -lm
+LDFLAGS=-g $(LARIAT_LIB) $(GTEST_LIB) -lpthread -lrt -lm
 
 ################################################################################
 # LISTS
@@ -98,37 +98,37 @@ unittest:	main.o $(LARIAT_LIB) $(GTEST_LIB)
 PHONY+=cpu
 
 cpu:	unittest
-	./unittest --gtest_filter=LariatTest.Cpu -c 1
+	./unittest --gtest_filter=LariatDeathTest.Cpu -c 1
 
 PHONY+=core
 
 core:	unittest
-	./unittest --gtest_filter=LariatTest.Core -E
+	./unittest --gtest_filter=LariatDeathTest.Core -E
 
 PHONY+=memory
 
 memory:	unittest
-	./unittest --gtest_filter=LariatTest.Memory -m 10485760
+	./unittest --gtest_filter=LariatTest.Memory -r 1 -m 10485760
 
 PHONY+=opened
 
 opened:	unittest
-	./unittest --gtest_filter=LariatTest.Opened -o 10
+	./unittest --gtest_filter=LariatTest.Opened -r 1 -o 10
 
 PHONY+=real
 
 real:	unittest
-	./unittest --gtest_filter=LariatTest.Real -r 5
+	./unittest --gtest_filter=LariatDeathTest.Real -r 5
 
 PHONY+=stack
 
 stack:	unittest
-	./unittest --gtest_filter=LariatTest.Stack -s 10
+	./unittest --gtest_filter=LariatDeathTest.Stack -s 10
 
 PHONY+=thread
 
 thread:	unittest
-	./unittest --gtest_filter=LariatTest.Thread -t 10
+	./unittest --gtest_filter=LariatTest.Thread -r 1 -t 10
 
 ################################################################################
 # PATTERNS
@@ -155,8 +155,11 @@ thread:	unittest
 
 PHONY+=depend
 
+CFILES=$(wildcard *.c)
+CXXFILES=$(wildcard *.cpp)
+
 depend:
-	$(CXX) $(CPPFLAGS) -M -MG $(CXXFILES) >> dependencies.mk
+	$(CXX) $(CPPFLAGS) -M -MG $(CFILES) $(CXXFILES) > dependencies.mk
 
 -include dependencies.mk
 

@@ -1,11 +1,11 @@
 /* vi: set ts=4 expandtab shiftwidth=4: */
 /**
  * @file
+ * Lariat Surrogate Main Program com::diag::lariat::main Implementation
  * Copyright 2011 Digital Aggregates Corporation, Colorado, USA
  * Licensed under the terms in README.h
  * Chip Overclock (coverclock@diag.com)
  * http://www.diag.com/navigation/downloads/Lariat.html
- * Implements the Lariat surrogate main program com::diag::lariat::main.
  */
 
 #include <sys/types.h>
@@ -17,6 +17,7 @@
 #include <csignal>
 #include <cerrno>
 #include <unistd.h>
+#include <execinfo.h>
 #include "lariat.h"
 
 using namespace std;
@@ -27,10 +28,8 @@ namespace com { namespace diag { namespace lariat {
 
 const char * number(const char * string, unsigned long * valuep)
 {
-	unsigned long value;
 	char * end;
-
-	value = strtoull(string, &end, 0);
+	unsigned long value = strtoull(string, &end, 0);
 
 	if (valuep != 0) { *valuep = value; }
 	if (*end != '\0') { errno = EINVAL; perror(string); }
@@ -38,22 +37,26 @@ const char * number(const char * string, unsigned long * valuep)
 	return end;
 }
 
-#if 0
-/**
- * Some older C++ compilers complain if storage for a static const variable is
- * not allocated within a translation unit. Some newer C++ compilers complain
- * if it is.
- */
-static const unsigned long UNLIMITED;
-#endif
+int stacktrace(void ** buffer, unsigned int size, int fd)
+{
+    int rc;
+    backtrace_symbols_fd(buffer, rc = backtrace(buffer, size), fd);
+    return rc;
+}
+
+int stacktrace()
+{
+    void * buffer[256];
+    return stacktrace(buffer, sizeof(buffer) / sizeof(buffer[0]), STDERR_FILENO);
+}
 
 int limit(int resource, unsigned long value, bool force)
 {
 	int rc = -1;
-	struct rlimit limit;
-	rlim_t actual;
 
     do {
+
+    	struct rlimit limit;
 
     	memset(&limit, 0, sizeof(limit));
 
@@ -62,11 +65,7 @@ int limit(int resource, unsigned long value, bool force)
             break;
         }
 
-#if defined(DEBUG)
-    	fprintf(stderr, "limit[%d]: was cur=%lu max=%lu\n", resource, limit.rlim_cur, limit.rlim_max);
-#endif
-
-    	actual = (value == UNLIMITED) ? RLIM_INFINITY : value;
+    	rlim_t actual = (value == UNLIMITED) ? RLIM_INFINITY : value;
 
     	if (actual < limit.rlim_max) {
     		limit.rlim_cur = actual;
@@ -81,9 +80,6 @@ int limit(int resource, unsigned long value, bool force)
 			perror("setrlimit");
             break;
 		}
-#if defined(DEBUG)
-    	fprintf(stderr, "limit[%d]: now cur=%lu max=%lu\n", resource, limit.rlim_cur, limit.rlim_max);
-#endif
 
         rc = 0;
 
@@ -92,31 +88,60 @@ int limit(int resource, unsigned long value, bool force)
 	return rc;
 }
 
-static pid_t pid = -1;
+static void * stack = 0;
 
-void handler(int signum)
+int install(int signum, void (* handler)(int), bool restart, void (** handlerp)(int))
 {
-	if (signum == SIGALRM) {
-		errno = ETIMEDOUT;
-		perror("SIGALRM");
-		if (pid > 0) {
-			killpg(pid, SIGKILL);
+    int rc = -1;
+
+    if (handler == 0) {
+    	handler = SIG_DFL;
+    }
+
+    if (stack != 0) {
+    	// Do nothing.
+    } else if (handler == SIG_DFL) {
+    	// Do nothing.
+    } else if (handler == SIG_IGN) {
+    	// Do nothing.
+    } else {
+
+		stack_t stknow;
+		stack_t stkwas;
+
+		stack = malloc(SIGSTKSZ);
+		if (stack == 0) {
+			perror("malloc");
+		} else {
+			memset(&stknow, 0, sizeof(stknow));
+			stknow.ss_sp = stack;
+			stknow.ss_size = SIGSTKSZ;
+			if (sigaltstack(&stknow, &stkwas) < 0) {
+				perror("sigaltstack");
+			}
 		}
-		exit(2);
-	}
-}
 
-int install(int signum, void (* handler)(int), bool restart)
-{
-    struct sigaction action;
-    int rc;
+    }
 
-    memset(&action, 0, sizeof(action));
-    action.sa_handler = (handler != 0) ? handler : SIG_DFL;
-    action.sa_flags = restart ? SA_RESTART : 0;
+    struct sigaction actnow;
+    struct sigaction actwas;
 
-    if ((rc = sigaction(signum, &action, (struct sigaction *)0)) < 0) {
+    memset(&actnow, 0, sizeof(actnow));
+	actnow.sa_handler = handler;
+    if (handler == SIG_DFL) {
+    	// Do nothing.
+    } else if (handler == SIG_IGN) {
+    	// Do nothing.
+    } else {
+    	actnow.sa_flags = (restart ? SA_RESTART : 0) | ((stack != 0) ? SA_ONSTACK : 0);
+    }
+
+    if ((rc = sigaction(signum, &actnow, &actwas)) < 0) {
         perror("sigaction");
+    }
+
+    if (handlerp != 0) {
+    	*handlerp = actwas.sa_handler;
     }
 
     return rc;
@@ -124,8 +149,9 @@ int install(int signum, void (* handler)(int), bool restart)
 
 int timer(int which, unsigned long seconds)
 {
-    struct itimerval timer;
     int rc;
+
+    struct itimerval timer;
 
     timer.it_value.tv_sec = seconds;
     timer.it_value.tv_usec = 0;
@@ -148,7 +174,7 @@ int timer(int which, unsigned long seconds)
 static void usage(const char * program, FILE * stream)
 {
     fprintf(stream, "\n");
-    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -m BYTES | -M ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -0 ] [ -! ] [ -? ]\n", program);
+    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -m BYTES | -M ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -0 ] [ -! ] [ -+ ] [ -? ]\n", program);
     fprintf(stream, "       -c SECONDS    Set the CPU time limit to SECONDS\n");
     fprintf(stream, "       -C            Set the CPU time limit to unlimited\n");
     fprintf(stream, "       -d BYTES      Set the data segment size limit to BYTES\n");
@@ -169,33 +195,28 @@ static void usage(const char * program, FILE * stream)
     fprintf(stream, "       -T            Set the process and thread limit to unlimited\n");
     fprintf(stderr, "       -0            Do not actually run any tests\n");
     fprintf(stderr, "       -!            Enable debug output\n");
+    fprintf(stderr, "       -+            Print resource usage at end\n");
     fprintf(stderr, "       -?            Print menu\n");
 }
 
 int main(int argc, char ** argv, char ** envp)
 {
-	const char * program;
-    int opt;
-    bool debug = false;
-    bool done = false;
-    bool error = false;
-    unsigned long value;
-
-    program = strrchr(argv[0], '/');
+    const char * program = strrchr(argv[0], '/');
     program = (program == (char *)0) ? argv[0] : program + 1;
 
-    if ((pid = getpid()) < 0) {
-    	perror("getpid");
-    } else if (setpgid(0, pid) < 0) {
+    if (setpgid(0, 0) < 0) {
     	perror("setpgid");
-    	pid = -1;
-    } else {
-    	// Do nothing.
     }
 
     ::testing::InitGoogleTest(&argc, argv);
 
-    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fm:Mo:Os:Rr:St:T0!?")) >= 0) {
+    int opt;
+    bool debug = false;
+    bool done = false;
+    bool error = false;
+    bool report = false;
+    unsigned long value;
+    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fm:Mo:Os:Rr:St:T0!+?")) >= 0) {
 
         switch (opt) {
 
@@ -272,13 +293,13 @@ int main(int argc, char ** argv, char ** envp)
             break;
 
         case 'r':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (install(SIGALRM, handler) < 0))) && (!(error = (timer(ITIMER_REAL, value) < 0))) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (timer(ITIMER_REAL, value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
 
         case 'R':
-            if ((!(error = (install(SIGALRM) < 0))) && (!(error = (timer(ITIMER_REAL) < 0))) && debug) {
+            if ((!(error = (timer(ITIMER_REAL) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c\n", program, opt);
             }
             break;
@@ -321,6 +342,13 @@ int main(int argc, char ** argv, char ** envp)
         	}
             break;
 
+        case '+':
+            report = true;
+        	if (debug) {
+        		fprintf(stderr, "%s: -%c\n", program, opt);
+        	}
+            break;
+
         case '?':
         	if (debug) {
         		fprintf(stderr, "%s: -%c\n", program, opt);
@@ -350,19 +378,27 @@ int main(int argc, char ** argv, char ** envp)
     	exit(1);
     }
 
-    if (debug) {
-    	if (envp != 0) {
-			for (; (*envp !=  0); ++envp) {
-				fprintf(stderr, "%s: %s\n", program, *envp);
-			}
-    	}
+    if (!debug) {
+    	// Do nothing.
+    } else if (envp == 0) {
+    	// Do nothing.
+    } else {
+		for (; (*envp !=  0); ++envp) {
+			fprintf(stderr, "%s: %s\n", program, *envp);
+		}
     }
 
     if (done) {
     	exit(0);
     }
 
-    return RUN_ALL_TESTS();
+    int rc = RUN_ALL_TESTS();
+
+    if (report) {
+
+    }
+
+    return rc;
 }
 
 

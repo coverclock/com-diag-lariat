@@ -4,11 +4,11 @@
 /* vi: set ts=4 expandtab shiftwidth=4: */
 /**
  * @file
+ * Lariat Surrogate Main Program com::diag::lariat::main Declaration
  * Copyright 2011 Digital Aggregates Corporation, Colorado, USA
  * Licensed under the terms in README.h
  * Chip Overclock (coverclock@diag.com)
  * http://www.diag.com/navigation/downloads/Lariat.html
- * Implements the Lariat surrogate main program com::diag::lariat::main.
  */
 
 #include "gtest/gtest.h"
@@ -22,6 +22,22 @@ namespace com { namespace diag { namespace lariat {
  * @return a pointer past the last numeric character of the string.
  */
 extern const char * number(const char * string, unsigned long * valuep);
+
+/**
+ * Print a stack trace to the specified file descriptor using a buffer of
+ * the specified size.
+ * @param buffer points to a buffer into which the stack trace data is stored.
+ * @param size is the cardinality of the buffer.
+ * @param fd is the file descriptor.
+ * @return the number of positions used in the buffer.
+ */
+extern int stacktrace(void ** buffer, unsigned int size, int fd);
+
+/**
+ * Print a stack trace to standard error using a default buffer.
+ * @return the number of positions used in the default buffer.
+ */
+extern int stacktrace();
 
 /**
  * This value indicates that the resource limit is unlimited. For unprivileged
@@ -43,19 +59,14 @@ static const unsigned long UNLIMITED = ~(unsigned long)0;
 extern int limit(int resource, unsigned long value = UNLIMITED, bool force = false);
 
 /**
- * Handle a signal. If the signal is SIGALRM, the entire thread group exits.
- * @param signum is the signal number.
- */
-extern void handler(int signum);
-
-/**
  * Install the signal handler for the specified signal.
  * @param signum is the signal for which the handler is installed.
  * @param handler points to the signal handler function or NULL to remove.
  * @param restart if true causes interrupted system calls to be restarted.
+ * @param handlerp points to where a pointer to the prior handler is returned.
  * @return 0 for success, <0 otherwise.
  */
-extern int install(int signum, void (* handler)(int) = 0, bool restart = false);
+extern int install(int signum, void (* handler)(int) = 0, bool restart = false, void (** handlerp)(int) = 0);
 
 /**
  * Set a non-periodic interval timer for real clock time in seconds or clear an
