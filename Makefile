@@ -134,7 +134,7 @@ stack:	unittest
 PHONY+=thread
 
 thread:	unittest
-	./unittest --gtest_filter=LariatTest.Thread -r 1 -t 10
+	./unittest --gtest_filter=LariatTest.Thread -r 1 -t 100
 
 ################################################################################
 # PATTERNS
@@ -160,6 +160,8 @@ thread:	unittest
 ################################################################################
 
 PHONY+=depend
+
+ARTIFACTS+=dependencies.mk
 
 CFILES=$(wildcard *.c)
 CXXFILES=$(wildcard *.cpp)

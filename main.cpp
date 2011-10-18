@@ -73,9 +73,7 @@ TEST(LariatDeathTest, Cpu) {
 
 static void real() {
 	if (::com::diag::lariat::timer(5) == 0) {
-		for (int ii = 0; ii < 10; ++ii) {
-			sleep(1);
-		}
+		sleep(10);
 	}
 }
 
@@ -102,14 +100,18 @@ TEST(LariatDeathTest, Core) {
 }
 
 static int thread() {
+	int n = 0;
 	pid_t pid;
 	while ((pid = fork()) >= 0) {
 		if (pid == 0) {
 			sleep(1);
 			exit(0);
+		} else {
+			++n;
 		}
 	}
 	perror("fork");
+	fprintf(stderr, "forks=%d\n", n);
 	return pid;
 }
 
@@ -118,12 +120,14 @@ TEST(LariatTest, Thread) {
 }
 
 static int opened() {
-	int rc;
-	while ((rc = open("/dev/null", O_RDONLY)) >= 0) {
-		;
+	int n = 0;
+	int fd;
+	while ((fd = open("/dev/null", O_RDONLY)) >= 0) {
+		++n;
 	}
 	perror("open");
-	return rc;
+	fprintf(stderr, "opens=%d\n", n);
+	return fd;
 }
 
 TEST(LariatTest, Opened) {
