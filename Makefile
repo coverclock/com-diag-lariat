@@ -10,7 +10,7 @@ MAJOR=0
 MINOR=0
 FIX=0
 
-SVN_URL=svn://graphite/biscuit/trunk/Lariat
+SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
 HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
 
 ################################################################################
