@@ -147,7 +147,7 @@ int install(int signum, void (* handler)(int), bool restart, void (** handlerp)(
     return rc;
 }
 
-int timer(int which, unsigned long seconds)
+int timer(unsigned long seconds)
 {
     int rc;
 
@@ -159,7 +159,7 @@ int timer(int which, unsigned long seconds)
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 0;
 
-    if ((rc = setitimer(which, &timer, (struct itimerval *)0)) < 0) {
+    if ((rc = setitimer(ITIMER_REAL, &timer, (struct itimerval *)0)) < 0) {
     	perror("setitimer");
     }
 
@@ -174,7 +174,7 @@ int timer(int which, unsigned long seconds)
 static void usage(const char * program, FILE * stream)
 {
     fprintf(stream, "\n");
-    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -m BYTES | -M ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -0 ] [ -! ] [ -+ ] [ -? ]\n", program);
+    fprintf(stream, "usage: %s [ -c SECONDS | -C ] [ -d BYTES | -D ] [ -e BYTES | -E ] [ -f BYTES | -F ] [ -m BYTES | -M ] [ -o OPENED | -O ] [ -r SECONDS | -R ] [ -s BYTES | -S ] [ -t THREADS | -T ] [ -0 ] [ -! ] [ -? ]\n", program);
     fprintf(stream, "       -c SECONDS    Set the CPU time limit to SECONDS\n");
     fprintf(stream, "       -C            Set the CPU time limit to unlimited\n");
     fprintf(stream, "       -d BYTES      Set the data segment size limit to BYTES\n");
@@ -195,7 +195,6 @@ static void usage(const char * program, FILE * stream)
     fprintf(stream, "       -T            Set the process and thread limit to unlimited\n");
     fprintf(stderr, "       -0            Do not actually run any tests\n");
     fprintf(stderr, "       -!            Enable debug output\n");
-    fprintf(stderr, "       -+            Print resource usage at end\n");
     fprintf(stderr, "       -?            Print menu\n");
 }
 
@@ -214,9 +213,8 @@ int main(int argc, char ** argv, char ** envp)
     bool debug = false;
     bool done = false;
     bool error = false;
-    bool report = false;
     unsigned long value;
-    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fm:Mo:Os:Rr:St:T0!+?")) >= 0) {
+    while ((opt = getopt(argc, argv, "c:Cd:De:Ef:Fm:Mo:Os:Rr:St:T0!?")) >= 0) {
 
         switch (opt) {
 
@@ -293,7 +291,7 @@ int main(int argc, char ** argv, char ** envp)
             break;
 
         case 'r':
-            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (timer(ITIMER_REAL, value) < 0))) && debug) {
+            if ((!(error = (*number(optarg, &value) != '\0'))) && (!(error = (timer(value) < 0))) && debug) {
             	fprintf(stderr, "%s: -%c %lu\n", program, opt, value);
             }
             break;
@@ -342,13 +340,6 @@ int main(int argc, char ** argv, char ** envp)
         	}
             break;
 
-        case '+':
-            report = true;
-        	if (debug) {
-        		fprintf(stderr, "%s: -%c\n", program, opt);
-        	}
-            break;
-
         case '?':
         	if (debug) {
         		fprintf(stderr, "%s: -%c\n", program, opt);
@@ -392,13 +383,7 @@ int main(int argc, char ** argv, char ** envp)
     	exit(0);
     }
 
-    int rc = RUN_ALL_TESTS();
-
-    if (report) {
-
-    }
-
-    return rc;
+    return RUN_ALL_TESTS();
 }
 
 

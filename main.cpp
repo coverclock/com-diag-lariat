@@ -33,18 +33,32 @@ TEST(LariatDeathTest, Stack)  {
 static void * memory() {
 	void * ptr;
 	try {
-		while ((ptr = malloc(1024)) != 0) {
-			;
+		if ((ptr = malloc(10485760 * 10)) == 0) {
+			perror("malloc");
+		} else {
+			free(ptr);
 		}
-		perror("malloc");
 	} catch (...) {
 		perror("malloc");
+		ptr = 0;
 	}
 	return ptr;
 }
 
 TEST(LariatTest, Memory) {
 	EXPECT_EQ(memory(), (void *)0);
+}
+
+static void * data() {
+	void * ptr;
+	if ((ptr = sbrk(10485760 * 10)) == (void *)-1) {
+		perror("sbrk");
+	}
+	return ptr;
+}
+
+TEST(LariatTest, Data) {
+	EXPECT_EQ(data(), (void *)-1);
 }
 
 static void cpu() {
@@ -58,8 +72,10 @@ TEST(LariatDeathTest, Cpu) {
 }
 
 static void real() {
-	while (true) {
-		usleep(1000000);
+	if (::com::diag::lariat::timer(5) == 0) {
+		for (int ii = 0; ii < 10; ++ii) {
+			sleep(1);
+		}
 	}
 }
 
@@ -89,9 +105,8 @@ static int thread() {
 	pid_t pid;
 	while ((pid = fork()) >= 0) {
 		if (pid == 0) {
-			while (true) {
-				usleep(1000000);
-			}
+			sleep(1);
+			exit(0);
 		}
 	}
 	perror("fork");
