@@ -71,11 +71,10 @@ extern int install(int signum, void (* handler)(int) = 0, bool restart = false, 
 /**
  * Set a non-periodic interval timer for real clock time in seconds or clear an
  * existing timer.
- * @param which indicates the timer type: ITIMER_REAL, ITIMER_VIRTUAL, or ITIMER_PROF.
  * @param seconds is the timer interval in seconds or zero to clear.
  * @return 0 for success, <0 otherwise.
  */
-extern int timer(int which, unsigned long seconds = 0);
+extern int timer(unsigned long seconds = 0);
 
 /**
  * This is a surrogate main program that can be called by the real main program

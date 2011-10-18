@@ -105,10 +105,15 @@ PHONY+=core
 core:	unittest
 	./unittest --gtest_filter=LariatDeathTest.Core -E
 
+PHONY+=data
+
+data:	unittest
+	./unittest --gtest_filter=LariatTest.Data -d 10485760
+
 PHONY+=memory
 
 memory:	unittest
-	./unittest --gtest_filter=LariatTest.Memory -r 1 -m 10485760
+	./unittest --gtest_filter=LariatTest.Memory -m 10485760
 
 PHONY+=opened
 
@@ -118,7 +123,8 @@ opened:	unittest
 PHONY+=real
 
 real:	unittest
-	./unittest --gtest_filter=LariatDeathTest.Real -r 5
+#	./unittest --gtest_filter=LariatDeathTest.Real -r 5
+	./unittest --gtest_filter=LariatDeathTest.Real
 
 PHONY+=stack
 
