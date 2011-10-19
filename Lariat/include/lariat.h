@@ -1,7 +1,7 @@
+/* vi: set ts=4 expandtab shiftwidth=4: */
 #ifndef COM_DIAG_LARIAT_LARIAT_H_
 #define COM_DIAG_LARIAT_LARIAT_H_
 
-/* vi: set ts=4 expandtab shiftwidth=4: */
 /**
  * @file
  * Lariat Surrogate Main Program com::diag::lariat::main Declaration
@@ -21,7 +21,7 @@ namespace com { namespace diag { namespace lariat {
  * @param valuep if non-null points to where the value is returned.
  * @return a pointer past the last numeric character of the string.
  */
-extern const char * number(const char * string, unsigned long * valuep);
+extern const char * number(const char * string, unsigned long * valuep = 0);
 
 /**
  * Print a stack trace to the specified file descriptor using a buffer of
@@ -31,7 +31,7 @@ extern const char * number(const char * string, unsigned long * valuep);
  * @param fd is the file descriptor.
  * @return the number of positions used in the buffer.
  */
-extern int stacktrace(void ** buffer, unsigned int size, int fd);
+extern int stacktrace(void ** buffer, unsigned int size, int fd = 2);
 
 /**
  * Print a stack trace to standard error using a default buffer.

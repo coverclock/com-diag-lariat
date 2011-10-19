@@ -100,18 +100,18 @@ TEST(LariatDeathTest, Core) {
 }
 
 static int thread() {
-	int n = 0;
+	int nn = 0;
 	pid_t pid;
 	while ((pid = fork()) >= 0) {
 		if (pid == 0) {
 			sleep(1);
 			exit(0);
 		} else {
-			++n;
+			++nn;
 		}
 	}
 	perror("fork");
-	fprintf(stderr, "forks=%d\n", n);
+	fprintf(stderr, "forks=%d\n", nn);
 	return pid;
 }
 
@@ -120,18 +120,51 @@ TEST(LariatTest, Thread) {
 }
 
 static int opened() {
-	int n = 0;
+	int nn = 0;
 	int fd;
 	while ((fd = open("/dev/null", O_RDONLY)) >= 0) {
-		++n;
+		++nn;
 	}
 	perror("open");
-	fprintf(stderr, "opens=%d\n", n);
+	fprintf(stderr, "opens=%d\n", nn);
 	return fd;
 }
 
 TEST(LariatTest, Opened) {
 	EXPECT_EQ(opened(), -1);
+}
+
+static void limit() {
+	sleep(10);
+}
+
+TEST(LariatDeathTest, Limit) {
+	EXPECT_EXIT(real(), ::testing::KilledBySignal(SIGALRM), ".*");
+}
+
+static int group() {
+	pid_t pid;
+	for (int ii = 0; ii < 10; ++ii) {
+		if ((pid = fork()) < 0) {
+			perror("fork");
+			return pid;
+		} else if (pid == 0) {
+			continue;
+		} else {
+			for (int jj = 0; jj < 20; jj++) {
+				sleep(1);
+			}
+			exit(0);
+		}
+	}
+	for (int kk = 0; kk < 20; kk++) {
+		sleep(1);
+	}
+	return 0;
+}
+
+TEST(LariatTest, Group) {
+	EXPECT_EQ(group(), 0);
 }
 
 } } } }
