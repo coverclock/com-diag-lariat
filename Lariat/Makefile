@@ -26,9 +26,21 @@ HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
 # PREREQUISITES
 ################################################################################
 
-GTEST_SRC=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
-GTEST_LIB=$(GTEST_SRC)/libgtest.a
+GMOCK_SRC=$(HOME)/src/gmock-1.6.0#http://googlemock.googlecode.com/files/gmock-1.6.0.zip
+GMOCK_LIB=$(GMOCK_SRC)/lib/.libs/libgmock.a
+GMOCK_INC=$(GMOCK_SRC)/include
+
+GTEST_SRC=$(GMOCK_SRC)/gtest
+GTEST_LIB=$(GTEST_SRC)/lib/.libs/libgtest.a
 GTEST_INC=$(GTEST_SRC)/include
+
+#GTEST_SRC=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
+#GTEST_LIB=$(GTEST_SRC)/libgtest.a
+#GTEST_INC=$(GTEST_SRC)/include
+
+GTEST_INCS=-I$(GMOCK_INC) -I$(GTEST_INC)
+GTEST_LIBS=$(GMOCK_LIB) $(GTEST_LIB)
+GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
 
 ################################################################################
 # PROJECT
@@ -47,11 +59,11 @@ AR=ar
 RANLIB=ranlib
 STRIP=strip
 
-CPPFLAGS=-I$(LARIAT_INC) -I$(GTEST_INC)
+CPPFLAGS=-I$(LARIAT_INC) $(GTEST_INCS) $(GTEST_DEFS)
 CFLAGS=-g
 CXXFLAGS=-g
 ARFLAGS=rcv
-LDFLAGS=-g $(LARIAT_LIB) $(GTEST_LIB) -lpthread -lrt -lm
+LDFLAGS=-g $(LARIAT_LIB) $(GTEST_LIBS) -lpthread -lrt -lm
 
 ################################################################################
 # LISTS
