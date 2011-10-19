@@ -207,7 +207,11 @@ int main(int argc, char ** argv, char ** envp)
     	perror("setpgid");
     }
 
+#if defined(COM_DIAG_LARIAT_GMOCK)
+    ::testing::InitGoogleMock(&argc, argv);
+#else
     ::testing::InitGoogleTest(&argc, argv);
+#endif
 
     int opt;
     bool debug = false;

@@ -11,6 +11,7 @@
  * http://www.diag.com/navigation/downloads/Lariat.html
  */
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace com { namespace diag { namespace lariat {
