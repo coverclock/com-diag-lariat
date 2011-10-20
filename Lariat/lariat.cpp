@@ -18,7 +18,7 @@
 #include <cerrno>
 #include <unistd.h>
 #include <execinfo.h>
-#include "lariat.h"
+#include "lariat/lariat.h"
 
 using namespace std;
 
