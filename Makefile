@@ -15,8 +15,8 @@
 ################################################################################
 
 PROJECT=lariat
-MAJOR=0
-MINOR=1
+MAJOR=1
+MINOR=0
 FIX=0
 
 SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
