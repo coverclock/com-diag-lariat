@@ -109,8 +109,8 @@ TARGETS+=unittest
 
 ARTIFACTS+=unittest
 
-unittest:	main.o $(LARIAT_LIB) $(GTEST_LIB)
-	$(CXX) -o unittest main.o $(LDFLAGS)
+unittest:	unittest.o $(LARIAT_LIB) $(GTEST_LIB)
+	$(CXX) -o unittest unittest.o $(LDFLAGS)
 
 ################################################################################
 # UNIT TESTS
