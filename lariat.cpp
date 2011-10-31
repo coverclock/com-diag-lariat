@@ -24,7 +24,9 @@ using namespace std;
 
 extern char * optarg;
 
-namespace com { namespace diag { namespace lariat {
+namespace com {
+namespace diag {
+namespace lariat {
 
 const char * number(const char * string, unsigned long * valuep)
 {
@@ -391,4 +393,6 @@ int main(int argc, char ** argv, char ** envp)
 }
 
 
-} } }
+}
+}
+}
