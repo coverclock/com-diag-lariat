@@ -16,7 +16,7 @@
 
 PROJECT=lariat
 MAJOR=1
-MINOR=1
+MINOR=2
 FIX=0
 
 SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
@@ -26,21 +26,32 @@ HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
 # PREREQUISITES
 ################################################################################
 
-GMOCK_SRC=$(HOME)/src/gmock-1.6.0#http://googlemock.googlecode.com/files/gmock-1.6.0.zip
-GMOCK_LIB=$(GMOCK_SRC)/lib/.libs/libgmock.a
-GMOCK_INC=$(GMOCK_SRC)/include
+# GMOCK includes GTEST. LARIAT can be built to suport either GTEST alone, GTEST
+# inside of GMOCK but without supporting GMOCK, or GMOCK and GTEST. There is
+# really no reason not to go the full GMOCK route even if you don't plan on
+# using it right away.
 
-GTEST_SRC=$(GMOCK_SRC)/gtest
-GTEST_LIB=$(GTEST_SRC)/lib/.libs/libgtest.a
-GTEST_INC=$(GTEST_SRC)/include
+GMOCK_DIR=$(HOME)/src/gmock-1.6.0#http://googlemock.googlecode.com/files/gmock-1.6.0.zip
+GMOCK_LIB=$(GMOCK_DIR)/lib/.libs/libgmock.a
+GMOCK_INC=$(GMOCK_DIR)/include
 
-#GTEST_SRC=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
-#GTEST_LIB=$(GTEST_SRC)/libgtest.a
-#GTEST_INC=$(GTEST_SRC)/include
+GTEST_DIR=$(GMOCK_DIR)/gtest
+GTEST_LIB=$(GTEST_DIR)/lib/.libs/libgtest.a
+GTEST_INC=$(GTEST_DIR)/include
 
+#GTEST_DIR=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
+#GTEST_LIB=$(GTEST_DIR)/libgtest.a
+#GTEST_INC=$(GTEST_DIR)/include
+
+ifdef GMOCK_LIB
 GTEST_INCS=-I$(GMOCK_INC) -I$(GTEST_INC)
 GTEST_LIBS=$(GMOCK_LIB) $(GTEST_LIB)
 GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
+else
+GTEST_INCS=-I$(GTEST_INC)
+GTEST_LIBS=$(GTEST_LIB)
+GTEST_DEFS=
+endif
 
 ################################################################################
 # PROJECT
@@ -49,9 +60,9 @@ GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
 CWD:=$(shell pwd)
 PROJECT_DIR=$(CWD)
 
-LARIAT_SRC=$(PROJECT_DIR)
-LARIAT_LIB=$(PROJECT_DIR)/lib$(PROJECT).a
-LARIAT_INC=$(PROJECT_DIR)/include
+LARIAT_DIR=$(PROJECT_DIR)
+LARIAT_LIB=$(LARIAT_DIR)/lib$(PROJECT).a
+LARIAT_INC=$(LARIAT_DIR)/include
 
 CC=gcc
 CXX=g++
