@@ -18,6 +18,10 @@
 #include <cerrno>
 #include <unistd.h>
 #include <execinfo.h>
+#if defined(COM_DIAG_LARIAT_GMOCK)
+#include "gmock/gmock.h"
+#endif
+#include "gtest/gtest.h"
 #include "com/diag/lariat/lariat.h"
 
 using namespace std;
