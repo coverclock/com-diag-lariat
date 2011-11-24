@@ -14,6 +14,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <fcntl.h>
+#include "gtest/gtest.h"
 #include "com/diag/lariat/lariat.h"
 
 using namespace std;
