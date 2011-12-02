@@ -16,7 +16,7 @@
 
 PROJECT=lariat
 MAJOR=1
-MINOR=3
+MINOR=4
 FIX=0
 
 SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
@@ -235,19 +235,31 @@ depend:
 -include dependencies.mk
 
 ################################################################################
-# ENTRY POINTS
+# DOCUMENTATION
 ################################################################################
 
-PHONY+=all clean clobber pristine
+DOC_DIR=doc
+BROWSER=firefox
 
-all:	$(TARGETS)
+PHONY+=documentation browse refman manpages
+DELIVERABLES+=$(DOC_DIR)
 
-clean:
-	rm -f *.o
-	rm -f $(ARTIFACTS)
-	
-clobber:	clean
-	rm -f $(DELIVERABLES)
+documentation:
+	mkdir -p $(DOC_DIR)/latex $(DOC_DIR)/man $(DOC_DIR)/pdf
+	sed -e "s/\\\$$Name.*\\\$$/$(MAJOR).$(MINOR).$(BUILD)/" < doxygen.cf > doxygen-local.cf
+	doxygen doxygen-local.cf
+	( cd $(DOC_DIR)/latex; $(MAKE) refman.pdf; cp refman.pdf ../pdf )
+	cat $(DOC_DIR)/man/man3/*.3 | groff -man -Tps - > $(DOC_DIR)/pdf/manpages.ps
+	ps2pdf $(DOC_DIR)/pdf/manpages.ps $(DOC_DIR)/pdf/manpages.pdf
+
+browse:
+	$(BROWSER) file:doc/html/index.html
+
+refman:
+	$(BROWSER) file:doc/pdf/refman.pdf
+
+manpages:
+	$(BROWSER) file:doc/pdf/manpages.pdf
 
 ################################################################################
 # DISTRIBUTION
@@ -262,6 +274,21 @@ dist $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz:
 	svn export $(SVN_URL) $$TARDIR/$(PROJECT)-$(MAJOR).$(MINOR).$(FIX); \
 	tar -C $$TARDIR -cvzf - $(PROJECT)-$(MAJOR).$(MINOR).$(FIX) > $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz; \
 	rm -rf $$TARDIR
+
+################################################################################
+# ENTRY POINTS
+################################################################################
+
+PHONY+=all clean clobber pristine
+
+all:	$(TARGETS)
+
+clean:
+	rm -f *.o
+	rm -f $(ARTIFACTS)
+	
+clobber:	clean
+	rm -f $(DELIVERABLES)
 
 ################################################################################
 # END
