@@ -199,9 +199,9 @@ static void usage(const char * program, FILE * stream)
     fprintf(stream, "       -S            Set the process stack size limit to unlimited\n");
     fprintf(stream, "       -t THREADS    Set the user process and thread limit to THREADS\n");
     fprintf(stream, "       -T            Set the user process and thread limit to unlimited\n");
-    fprintf(stderr, "       -0            Do not actually run any tests\n");
-    fprintf(stderr, "       -!            Enable debug output\n");
-    fprintf(stderr, "       -?            Print menu\n");
+    fprintf(stream, "       -0            Do not actually run any tests\n");
+    fprintf(stream, "       -!            Enable debug output\n");
+    fprintf(stream, "       -?            Print menu\n");
 }
 
 int main(int argc, char ** argv, char ** envp)
