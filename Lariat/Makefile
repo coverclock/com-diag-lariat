@@ -17,7 +17,7 @@
 PROJECT=lariat
 MAJOR=1
 MINOR=4
-FIX=0
+FIX=1
 
 SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
 HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
