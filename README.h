@@ -50,10 +50,11 @@
 
 	ABSTRACT
 
-	This file is part of the Digital Aggregates Corporation Lariat
-	package that provides some minor additional useful functionality
-	on top of Google Test. This license does not apply to Google Test
-	itself, only to the local modifications provided by Lariat.
+	This file is part of the Digital Aggregates Corporation Lariat package.
+	Lariat provides some minor additional functionality on top of Google Test
+	and Google Mock which has proven useful in automated unit test environments.
+	This license does not apply to Google Test itself, only to the additions
+	provided by Lariat.
 
 	This software is an original work of its author(s).
 
