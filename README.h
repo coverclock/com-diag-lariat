@@ -43,9 +43,6 @@
 	Alternative commercial licensing terms are available from the copyright
 	holder.
 
-		Digital Aggregates Corporation
-		http://www.diag.com
-
 --------------------------------------------------------------------------------
 
 	ABSTRACT
