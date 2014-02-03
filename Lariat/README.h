@@ -54,7 +54,9 @@
 	Lariat provides some minor additional functionality on top of Google Test
 	and Google Mock which has proven useful in automated unit test environments.
 	This license does not apply to Google Test itself, only to the additions
-	provided by Lariat.
+	provided by Lariat. Lariat has legitimately found its way into the unit
+	test environments of some of the Corporation's clients, so don't be
+	surprised if it crops up in your travels elsewhere.
 
 	This software is an original work of its author(s).
 
