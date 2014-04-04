@@ -21,7 +21,7 @@ FIX=2
 
 SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
 HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
-GIT_URL=https://github.com/coverclock/com-diag-lariat
+GIT_URL=https://github.com/coverclock/com-diag-lariat.git
 
 ################################################################################
 # PREREQUISITES
