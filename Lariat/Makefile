@@ -15,13 +15,15 @@
 ################################################################################
 
 PROJECT=lariat
+TITLE=Lariat
 MAJOR=1
 MINOR=4
 FIX=2
 
-SVN_URL=svn://graphite/$(PROJECT)/trunk/Lariat
-HTTP_URL=http://www.diag.com/navigation/downloads/Lariat.html
-GIT_URL=https://github.com/coverclock/com-diag-lariat.git
+SVN_REPO=svn://graphite/$(PROJECT)
+SVN_URL=svn://graphite/$(PROJECT)/trunk/$(TITLE)
+HTTP_URL=http://www.diag.com/navigation/downloads/$(TITLE).html
+GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
 
 ################################################################################
 # PREREQUISITES
@@ -276,7 +278,7 @@ dist $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz:
 	tar -C $$TARDIR -cvzf - $(PROJECT)-$(MAJOR).$(MINOR).$(FIX) > $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz; \
 	rm -rf $$TARDIR
 
-PHONY+=commit dcommit push origin
+PHONY+=commit dcommit push init
 
 commit:
 	git commit .
@@ -287,7 +289,9 @@ dcommit:
 push:
 	git push origin master
 
-origin:
+init:
+	git svn clone -s $(SVN_REPO)
+	git svn show-ignore > .gitignore
 	git remote add origin $(GIT_URL)
 
 ################################################################################
