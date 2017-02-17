@@ -54,7 +54,7 @@ Information regarding Lariat can be found here:
 
     http://www.diag.com/navigation/downloads/Lariat.html
 
-Contact:
+CONTACT
 
     Chip Overclock
     Digital Aggregates Corporation
