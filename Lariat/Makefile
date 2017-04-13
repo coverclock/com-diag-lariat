@@ -20,8 +20,6 @@ MAJOR=1
 MINOR=4
 FIX=2
 
-SVN_REPO=svn://graphite/$(PROJECT)
-SVN_URL=svn://graphite/$(PROJECT)/trunk/$(TITLE)
 HTTP_URL=http://www.diag.com/navigation/downloads/$(TITLE).html
 GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
 
@@ -29,24 +27,17 @@ GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
 # PREREQUISITES
 ################################################################################
 
-# GMOCK includes GTEST. LARIAT can be built to suport either GTEST alone, GTEST
-# inside of GMOCK but without supporting GMOCK, or GMOCK and GTEST. There is
-# really no reason not to go the full GMOCK route even if you don't plan on
-# using it right away.
+GTEST_ROOT=$(HOME)/src/googletest
 
-GMOCK_DIR=$(HOME)/src/gmock-1.6.0#http://googlemock.googlecode.com/files/gmock-1.6.0.zip
-GMOCK_LIB=$(GMOCK_DIR)/lib/.libs/libgmock.a
+GMOCK_DIR=$(GTEST_ROOT)/googlemock
+GMOCK_LIB=$(GMOCK_DIR)/libgmock.a
 GMOCK_INC=$(GMOCK_DIR)/include
 
-GTEST_DIR=$(GMOCK_DIR)/gtest
-GTEST_LIB=$(GTEST_DIR)/lib/.libs/libgtest.a
+GTEST_DIR=$(GTEST_ROOT)/googletest
+GTEST_LIB=$(GMOCK_DIR)/gtest/libgtest.a
 GTEST_INC=$(GTEST_DIR)/include
 
-#GTEST_DIR=$(HOME)/src/gtest-1.6.0#http://googletest.googlecode.com/files/gtest-1.6.0.zip
-#GTEST_LIB=$(GTEST_DIR)/libgtest.a
-#GTEST_INC=$(GTEST_DIR)/include
-
-ifdef GMOCK_LIB
+ifdef 0
 GTEST_INCS=-I$(GMOCK_INC) -I$(GTEST_INC)
 GTEST_LIBS=$(GMOCK_LIB) $(GTEST_LIB)
 GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
@@ -263,36 +254,6 @@ refman:
 
 manpages:
 	$(BROWSER) file:doc/pdf/manpages.pdf
-
-################################################################################
-# DISTRIBUTION
-################################################################################
-
-PHONY+=dist
-
-ARTIFACTS+=$(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz
-
-dist $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz:
-	TARDIR=$(shell mktemp -d /tmp/$(PROJECT).XXXXXXXXXX); \
-	svn export $(SVN_URL) $$TARDIR/$(PROJECT)-$(MAJOR).$(MINOR).$(FIX); \
-	tar -C $$TARDIR -cvzf - $(PROJECT)-$(MAJOR).$(MINOR).$(FIX) > $(PROJECT)-$(MAJOR).$(MINOR).$(FIX).tgz; \
-	rm -rf $$TARDIR
-
-PHONY+=commit dcommit push init
-
-commit:
-	git commit .
-
-dcommit:
-	git svn dcommit
-
-push:
-	git push origin master
-
-init:
-	git svn show-ignore > .gitignore
-	git add .gitignore
-	git remote add origin $(GIT_URL)
 
 ################################################################################
 # ENTRY POINTS
