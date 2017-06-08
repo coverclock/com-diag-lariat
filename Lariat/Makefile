@@ -30,11 +30,11 @@ GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
 GTEST_ROOT=$(HOME)/src/googletest
 
 GMOCK_DIR=$(GTEST_ROOT)/googlemock
-GMOCK_LIB=$(GMOCK_DIR)/libgmock.a
+GMOCK_LIB=$(GMOCK_DIR)/make/gmock.a
 GMOCK_INC=$(GMOCK_DIR)/include
 
 GTEST_DIR=$(GTEST_ROOT)/googletest
-GTEST_LIB=$(GMOCK_DIR)/gtest/libgtest.a
+GTEST_LIB=$(GTEST_DIR)/make/gtest.a
 GTEST_INC=$(GTEST_DIR)/include
 
 ifdef 0
