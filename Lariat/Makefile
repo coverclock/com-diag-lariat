@@ -23,11 +23,13 @@ BUILD=3
 HTTP_URL=http://www.diag.com/navigation/downloads/$(TITLE).html
 GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
 
+THERE=$(shell realpath ../..)
+
 ################################################################################
 # PREREQUISITES
 ################################################################################
 
-GTEST_ROOT=$(HOME)/src/googletest
+GTEST_ROOT=$(THERE)/googletest
 
 GMOCK_DIR=$(GTEST_ROOT)/googlemock
 GMOCK_LIB=$(GMOCK_DIR)/out/libgmock.a
