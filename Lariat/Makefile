@@ -17,8 +17,8 @@
 PROJECT=lariat
 TITLE=Lariat
 MAJOR=1
-MINOR=4
-BUILD=3
+MINOR=5
+BUILD=0
 
 HTTP_URL=http://www.diag.com/navigation/downloads/$(TITLE).html
 GIT_URL=https://github.com/coverclock/com-diag-$(PROJECT).git
