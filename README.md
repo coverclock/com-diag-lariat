@@ -62,3 +62,9 @@ CONTACT
     Wheat Ridge CO 80033 USA
     http://www.diag.com
     mailto:coverclock@diag.com
+
+BUILD
+
+    cd ~/src
+    git clone https://github.com/coverclock/com-diag-lariat
+    make -C com-diag-lariat/Lariat pristine all
