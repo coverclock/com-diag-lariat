@@ -31,23 +31,13 @@ THERE=$(shell realpath ../..)
 
 GTEST_ROOT=$(THERE)/googletest
 
-GMOCK_DIR=$(GTEST_ROOT)/googlemock
-GMOCK_LIB=$(GMOCK_DIR)/out/libgmock.a
-GMOCK_INC=$(GMOCK_DIR)/include
-
-GTEST_DIR=$(GTEST_ROOT)/googletest
-GTEST_LIB=$(GTEST_DIR)/out/libgtest.a
+GTEST_DIR=$(GTEST_ROOT)/googlemock
+GTEST_LIB=$(GTEST_DIR)/gtest/libgtest.a
 GTEST_INC=$(GTEST_DIR)/include
 
-ifdef 0
-GTEST_INCS=-I$(GMOCK_INC) -I$(GTEST_INC)
-GTEST_LIBS=$(GMOCK_LIB) $(GTEST_LIB)
-GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
-else
 GTEST_INCS=-I$(GTEST_INC)
 GTEST_LIBS=$(GTEST_LIB)
-GTEST_DEFS=
-endif
+GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
 
 ################################################################################
 # PROJECT
