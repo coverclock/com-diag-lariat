@@ -29,25 +29,25 @@ THERE=$(shell realpath ../..)
 # PREREQUISITES
 ################################################################################
 
-GTEST_ROOT=$(THERE)/googletest
+GTEST_TITLE		:=	GoogleTest
+GMOCK_TITLE		:=	GoogleMock
 
-GMOCK_DIR=$(GTEST_ROOT)/googlemock
-GMOCK_LIB=$(GMOCK_DIR)/out/libgmock.a
-GMOCK_INC=$(GMOCK_DIR)/include
+GTEST_PROJECT		:=	$(shell echo $(GTEST_TITLE) | tr '[A-Z]' '[a-z]')
+GTEST_SYMBOL		:=	$(shell echo $(GTEST_TITLE) | tr '[a-z]' '[A-Z]')
 
-GTEST_DIR=$(GTEST_ROOT)/googletest
-GTEST_LIB=$(GTEST_DIR)/out/libgtest.a
-GTEST_INC=$(GTEST_DIR)/include
+GMOCK_PROJECT		:=	$(shell echo $(GMOCK_TITLE) | tr '[A-Z]' '[a-z]')
+GMOCK_SYMBOL		:=	$(shell echo $(GMOCK_TITLE) | tr '[a-z]' '[A-Z]')
 
-ifdef 0
-GTEST_INCS=-I$(GMOCK_INC) -I$(GTEST_INC)
-GTEST_LIBS=$(GMOCK_LIB) $(GTEST_LIB)
-GTEST_DEFS=-DCOM_DIAG_LARIAT_GMOCK=1
-else
-GTEST_INCS=-I$(GTEST_INC)
-GTEST_LIBS=$(GTEST_LIB)
+GTEST_ROOT			:=	$(THERE)/$(GTEST_PROJECT)
+GTEST_HEADERS		:=	$(GTEST_ROOT)/$(GTEST_PROJECT)/include
+GTEST_LIBRARIES		:=	$(GTEST_ROOT)/out/$(GMOCK_PROJECT)/gtest
+
+GTEST_CPPFLAGS		:=	-iquote $(GTEST_HEADERS)
+GTEST_LDFLAGS		:=	$(GTEST_LIBRARIES)/libgtest.a $(GTEST_LIBRARIES)/libgtest_main.a
+
+GTEST_INCS=$(GTEST_CPPFLAGS)
+GTEST_LIBS=$(GTEST_LDFLAGS)
 GTEST_DEFS=
-endif
 
 ################################################################################
 # PROJECT

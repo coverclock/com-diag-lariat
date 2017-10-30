@@ -66,5 +66,7 @@ CONTACT
 BUILD
 
     cd ~/src
+    git clone https://github.com/google/googletest
+    ( cd googletest; mkdir out; cd out; cmake -Dgtest_build_samples=ON -Dgtest_build_tests=ON ..; make; make test )
     git clone https://github.com/coverclock/com-diag-lariat
     make -C com-diag-lariat/Lariat pristine all
